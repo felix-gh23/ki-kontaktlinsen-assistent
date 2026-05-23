@@ -525,7 +525,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  PRODUKTDATENBANK
+//  PRODUKTDATENBANK (für rechtes Panel)
 // ═══════════════════════════════════════════════════════════
 const PRODUKTE = {
   dailies_total1: {
@@ -609,98 +609,27 @@ const PRODUKTE = {
 };
 
 // ═══════════════════════════════════════════════════════════
-//  KEYWORD-MATCHING → ANTWORT GENERIEREN
+//  KEYWORD-MATCHING → RECHTES PANEL
 // ═══════════════════════════════════════════════════════════
-function generateKLResponse(text) {
+function getPanelData(text) {
   const t = text.toLowerCase();
-
-  // Sehwerte erkannt
-  if (t.match(/[-−]?\d[,\.]\d+/) || t.includes('sehwert') || t.includes('dioptrien') || t.includes('achse')) {
-    return {
-      produkt: PRODUKTE.acuvue_oasys,
-      alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.acuvue_moist],
-      extraTags: ['Sphärisch', 'Astigmatismus geprüft'],
-      antwortText: 'Die Sehwerte habe ich erfasst. Basierend auf diesen Werten empfehle ich die Acuvue Oasys – sie deckt ein breites Stärkenspektrum ab und bietet ausgezeichneten Tragekomfort. Bitte prüfen Sie ggf. einen torischen Typ bei Astigmatismus über 0,75 dpt.',
-    };
-  }
-
-  // Premium
-  if (t.includes('premium') || t.includes('beste') || t.includes('ohne kompromiss')) {
-    return {
-      produkt: PRODUKTE.dailies_total1,
-      alternativen: [PRODUKTE.acuvue_oasys, PRODUKTE.biofinity, PRODUKTE.air_optix_aqua],
-      extraTags: ['Premium-Kunde', 'Höchste Qualität'],
-      antwortText: 'Für Premium-Ansprüche ist die Dailies Total1 von Alcon die klare Empfehlung. Die Wassergradienten-Technologie bietet ein unvergleichliches Tragegefühl – viele Kunden berichten, die Linse kaum zu spüren.',
-    };
-  }
-
-  // Preis-Leistung
-  if (t.includes('preis') || t.includes('günstig') || t.includes('budget') || t.includes('kosten') || t.includes('erschwinglich')) {
-    return {
-      produkt: PRODUKTE.miru_1day,
-      alternativen: [PRODUKTE.acuvue_moist, PRODUKTE.air_optix_aqua, PRODUKTE.acuvue_oasys],
-      extraTags: ['Budgetbewusst', 'Tageslinse'],
-      antwortText: 'Für optimales Preis-Leistungs-Verhältnis empfehle ich die Miru 1day UpSide. Als dünnste Tageslinse der Welt verbindet sie innovative Technik mit einem günstigen Tagespreis. Kein Pflegemittel nötig.',
-    };
-  }
-
-  // Sport
-  if (t.includes('sport') || t.includes('aktiv') || t.includes('laufen') || t.includes('schwimmen') || t.includes('fußball') || t.includes('fitness')) {
-    return {
-      produkt: PRODUKTE.air_optix_aqua,
-      alternativen: [PRODUKTE.biofinity, PRODUKTE.acuvue_oasys, PRODUKTE.dailies_total1],
-      extraTags: ['Aktiver Lebensstil', 'Sport', 'UV-Schutz'],
-      antwortText: 'Für sportlich aktive Kunden ist die Air Optix Aqua ideal: Die Plasma-Beschichtung verhindert Ablagerungen durch Schweiß, und die sichere Passform hält auch bei intensiver Bewegung. UV-Schutz ist inklusive.',
-    };
-  }
-
-  // Monatslinse
-  if (t.includes('monatslinse') || t.includes('monatlich') || t.includes('pflegemittel') || t.includes('monats')) {
-    return {
-      produkt: PRODUKTE.biofinity,
-      alternativen: [PRODUKTE.air_optix_aqua, PRODUKTE.acuvue_oasys, PRODUKTE.dailies_total1],
-      extraTags: ['Monatslinse', 'Nachhaltig', 'Mit Pflegesystem'],
-      antwortText: 'Als Monatslinse empfehle ich die Biofinity von CooperVision. Exzellente Sauerstoffdurchlässigkeit, angenehm im Tragen, und bei Bedarf sogar für gelegentliches Übernachttragen geeignet. Günstiger im Jahresvergleich als Tageslinsen.',
-    };
-  }
-
-  // Tageslinse
-  if (t.includes('tageslinse') || t.includes('täglich') || t.includes('einweglins')) {
-    return {
-      produkt: PRODUKTE.acuvue_moist,
-      alternativen: [PRODUKTE.dailies_total1, PRODUKTE.miru_1day, PRODUKTE.acuvue_oasys],
-      extraTags: ['Tageslinse', 'Hygieneoptimiert', 'Kein Pflegeaufwand'],
-      antwortText: 'Für eine Tageslinse empfehle ich als Einstieg die 1-Day Acuvue Moist: sehr angenehm, kein Pflegemittel, und die LACREON®-Technologie hält die Linse den ganzen Tag frisch. Für höchste Ansprüche: Dailies Total1 als Upgrade.',
-    };
-  }
-
-  // Bildschirmarbeit
-  if (t.includes('bildschirm') || t.includes('computer') || t.includes('büro') || t.includes('home office') || t.includes('homeoffice') || t.includes('pc') || t.includes('laptop')) {
-    return {
-      produkt: PRODUKTE.acuvue_oasys,
-      alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.acuvue_moist],
-      extraTags: ['Bildschirmarbeit', 'Digitale Ermüdung', 'HydraLuxe'],
-      antwortText: 'Für intensive Bildschirmarbeit ist die Acuvue Oasys mit HydraLuxe™ die Empfehlung Nr. 1. Sie ahmt den natürlichen Tränenfilm nach und kompensiert das verminderte Blinzeln vor dem Bildschirm. Viele Büroangestellte berichten von deutlich weniger Augenbrennen.',
-    };
-  }
-
-  // Trockene Augen (Default wenn erwähnt)
-  if (t.includes('trocken') || t.includes('brennen') || t.includes('reizung') || t.includes('verträgt') || t.includes('empfindlich')) {
-    return {
-      produkt: PRODUKTE.dailies_total1,
-      alternativen: [PRODUKTE.acuvue_oasys, PRODUKTE.biofinity, PRODUKTE.acuvue_moist],
-      extraTags: ['Trockene Augen', 'Empfindliche Augen', 'Höchste Verträglichkeit'],
-      antwortText: 'Bei trockenen oder empfindlichen Augen ist die Dailies Total1 meine klare Empfehlung. Die einzigartige Wassergradienten-Technologie sorgt für eine weiche, feuchte Oberfläche, die das Auge kaum bemerkt. Viele Patienten, die andere Linsen nicht vertragen haben, kommen damit bestens zurecht.',
-    };
-  }
-
-  // Fallback / Allgemein
-  return {
-    produkt: PRODUKTE.acuvue_oasys,
-    alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.miru_1day],
-    extraTags: ['Allrounder', 'Erstberatung'],
-    antwortText: 'Vielen Dank für die Beschreibung. Als bewährten Allrounder empfehle ich die Acuvue Oasys – sie vereint hohen Tragekomfort, ausgezeichnete Sauerstoffdurchlässigkeit und eine breite Verfügbarkeit. Für eine gezieltere Empfehlung geben Sie mir gerne mehr Details zu Tragegewohnheiten oder spezifischen Beschwerden.',
-  };
+  if (t.match(/[-−]?\d[,\.]\d+/) || t.includes('sehwert') || t.includes('dioptrien') || t.includes('achse'))
+    return { produkt: PRODUKTE.acuvue_oasys,   alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.acuvue_moist], extraTags: ['Sphärisch', 'Astigmatismus geprüft'] };
+  if (t.includes('premium') || t.includes('beste') || t.includes('ohne kompromiss'))
+    return { produkt: PRODUKTE.dailies_total1, alternativen: [PRODUKTE.acuvue_oasys, PRODUKTE.biofinity, PRODUKTE.air_optix_aqua], extraTags: ['Premium-Kunde', 'Höchste Qualität'] };
+  if (t.includes('preis') || t.includes('günstig') || t.includes('budget') || t.includes('kosten'))
+    return { produkt: PRODUKTE.miru_1day,      alternativen: [PRODUKTE.acuvue_moist, PRODUKTE.air_optix_aqua, PRODUKTE.acuvue_oasys], extraTags: ['Budgetbewusst', 'Tageslinse'] };
+  if (t.includes('sport') || t.includes('aktiv') || t.includes('laufen') || t.includes('schwimmen') || t.includes('fitness'))
+    return { produkt: PRODUKTE.air_optix_aqua, alternativen: [PRODUKTE.biofinity, PRODUKTE.acuvue_oasys, PRODUKTE.dailies_total1], extraTags: ['Aktiver Lebensstil', 'Sport'] };
+  if (t.includes('monatslinse') || t.includes('monatlich') || t.includes('pflegemittel'))
+    return { produkt: PRODUKTE.biofinity,      alternativen: [PRODUKTE.air_optix_aqua, PRODUKTE.acuvue_oasys, PRODUKTE.dailies_total1], extraTags: ['Monatslinse', 'Nachhaltig'] };
+  if (t.includes('tageslinse') || t.includes('täglich') || t.includes('einweglins'))
+    return { produkt: PRODUKTE.acuvue_moist,   alternativen: [PRODUKTE.dailies_total1, PRODUKTE.miru_1day, PRODUKTE.acuvue_oasys], extraTags: ['Tageslinse', 'Kein Pflegeaufwand'] };
+  if (t.includes('bildschirm') || t.includes('computer') || t.includes('büro') || t.includes('homeoffice') || t.includes('laptop'))
+    return { produkt: PRODUKTE.acuvue_oasys,   alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.acuvue_moist], extraTags: ['Bildschirmarbeit', 'HydraLuxe'] };
+  if (t.includes('trocken') || t.includes('brennen') || t.includes('reizung') || t.includes('empfindlich'))
+    return { produkt: PRODUKTE.dailies_total1, alternativen: [PRODUKTE.acuvue_oasys, PRODUKTE.biofinity, PRODUKTE.acuvue_moist], extraTags: ['Trockene Augen', 'Höchste Verträglichkeit'] };
+  return   { produkt: PRODUKTE.acuvue_oasys,   alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.miru_1day], extraTags: ['Allrounder', 'Erstberatung'] };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -708,15 +637,12 @@ function generateKLResponse(text) {
 // ═══════════════════════════════════════════════════════════
 function updateRightPanel(data) {
   const { produkt, alternativen, extraTags } = data;
-
-  // ── Profil-Tags ──
   const allTags = [...new Set([...produkt.tags, ...extraTags])];
   const tagColors = ['', 'gruen', 'orange', 'grau', '', 'gruen', 'orange'];
   document.getElementById('profilTags').innerHTML = allTags
     .map((tag, i) => `<span class="profil-tag ${tagColors[i % tagColors.length]}">${tag}</span>`)
     .join('');
 
-  // ── Haupt-Empfehlung ──
   document.getElementById('empfInhalt').innerHTML = `
     <div class="empf-card">
       <div class="empf-header">
@@ -727,35 +653,17 @@ function updateRightPanel(data) {
         <div class="score-badge">${produkt.score} % Match</div>
       </div>
       <div class="empf-details">
-        <div class="empf-detail">
-          <div class="label">Wassergehalt</div>
-          <div class="value">${produkt.wassergehalt}</div>
-        </div>
-        <div class="empf-detail">
-          <div class="label">Tragzeit</div>
-          <div class="value">${produkt.tragzeit}</div>
-        </div>
-        <div class="empf-detail">
-          <div class="label">Material</div>
-          <div class="value">${produkt.material}</div>
-        </div>
-        <div class="empf-detail">
-          <div class="label">Sauerstoff</div>
-          <div class="value">${produkt.sauerstoff}</div>
-        </div>
+        <div class="empf-detail"><div class="label">Wassergehalt</div><div class="value">${produkt.wassergehalt}</div></div>
+        <div class="empf-detail"><div class="label">Tragzeit</div><div class="value">${produkt.tragzeit}</div></div>
+        <div class="empf-detail"><div class="label">Material</div><div class="value">${produkt.material}</div></div>
+        <div class="empf-detail"><div class="label">Sauerstoff</div><div class="value">${produkt.sauerstoff}</div></div>
       </div>
       <div class="score-bar-wrap">
-        <div class="score-bar-label">
-          <span>Übereinstimmung mit Kundenprofil</span>
-          <span>${produkt.score} %</span>
-        </div>
-        <div class="score-bar-bg">
-          <div class="score-bar-fill" style="width: ${produkt.score}%"></div>
-        </div>
+        <div class="score-bar-label"><span>Übereinstimmung mit Kundenprofil</span><span>${produkt.score} %</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${produkt.score}%"></div></div>
       </div>
     </div>`;
 
-  // ── Alternativen ──
   document.getElementById('altInhalt').innerHTML = alternativen.map(p => `
     <div class="alt-card">
       <div class="alt-icon">${p.icon}</div>
@@ -764,17 +672,19 @@ function updateRightPanel(data) {
       <div class="alt-score">${p.score} %</div>
     </div>`).join('');
 
-  // ── KI Analyse ──
   document.getElementById('analyseInhalt').innerHTML =
     `<div class="analyse-text">${produkt.analyse}</div>`;
 
-  // Auf Mobile: Badge zeigen und nach kurzer Verzögerung zum Empfehlung-Tab wechseln
   if (window.innerWidth <= 768) {
-    const badge = document.getElementById('empfBadge');
-    badge.classList.add('show');
+    document.getElementById('empfBadge').classList.add('show');
     setTimeout(() => switchTab('empf'), 600);
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+//  KONVERSATIONSVERLAUF
+// ═══════════════════════════════════════════════════════════
+let conversationHistory = [];
 
 // ═══════════════════════════════════════════════════════════
 //  CHAT-FUNKTIONEN
@@ -799,9 +709,7 @@ function showTyping() {
   div.innerHTML = `
     <div class="msg-avatar">🤖</div>
     <div class="msg-bubble">
-      <div class="typing-indicator">
-        <span></span><span></span><span></span>
-      </div>
+      <div class="typing-indicator"><span></span><span></span><span></span></div>
     </div>`;
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
@@ -812,7 +720,7 @@ function hideTyping() {
   if (el) el.remove();
 }
 
-function sendKLMessage() {
+async function sendKLMessage() {
   const input = document.getElementById('klInput');
   const text = input.value.trim();
   if (!text) return;
@@ -820,13 +728,36 @@ function sendKLMessage() {
   addMessage(text, 'user');
   input.value = '';
 
+  // Nachricht zum Verlauf hinzufügen
+  conversationHistory.push({ role: 'user', content: text });
+
+  // Rechtes Panel sofort per Keyword aktualisieren
+  updateRightPanel(getPanelData(text));
+
   showTyping();
-  setTimeout(() => {
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: conversationHistory }),
+    });
+
+    const data = await res.json();
     hideTyping();
-    const response = generateKLResponse(text);
-    addMessage(response.antwortText, 'ki');
-    updateRightPanel(response);
-  }, 1200 + Math.random() * 600);
+
+    if (!res.ok) {
+      addMessage(`⚠️ Fehler: ${data.error || 'Unbekannter Fehler'}`, 'ki');
+      return;
+    }
+
+    const reply = data.reply;
+    conversationHistory.push({ role: 'assistant', content: reply });
+    addMessage(reply, 'ki');
+  } catch (err) {
+    hideTyping();
+    addMessage('⚠️ Verbindungsfehler – bitte erneut versuchen.', 'ki');
+  }
 }
 
 function quickSend(text) {
@@ -858,16 +789,14 @@ function switchTab(tab) {
   }
 }
 
-// Initialer Zustand: Chat-Tab aktiv auf Mobile
 (function initTabs() {
-  const chatPanel  = document.querySelector('.chat-panel');
-  const rightPanel = document.querySelector('.right-panel');
   if (window.innerWidth <= 768) {
-    chatPanel.classList.add('tab-active');
+    document.querySelector('.chat-panel').classList.add('tab-active');
   }
 })();
 
 function clearChat() {
+  conversationHistory = [];
   const container = document.getElementById('klChatMessages');
   container.innerHTML = `
     <div class="msg ki">
@@ -876,7 +805,6 @@ function clearChat() {
         Guten Tag! Ich bin Ihr KI-Assistent für die Kontaktlinsen-Beratung. Beschreiben Sie mir bitte die Bedürfnisse Ihres Kunden – zum Beispiel Tragekomfort, Aktivitäten, Budget oder spezifische Augenbeschwerden. Ich empfehle dann die optimale Linse.
       </div>
     </div>`;
-
   document.getElementById('profilTags').innerHTML =
     '<div class="placeholder-hint"><div class="icon">💬</div>Starten Sie eine Beratung, um das Kundenprofil zu ermitteln.</div>';
   document.getElementById('empfInhalt').innerHTML =
