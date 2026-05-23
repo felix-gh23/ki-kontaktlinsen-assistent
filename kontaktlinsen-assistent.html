@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KI Kontaktlinsen-Assistent – Optik Muster</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f4f8;
+    color: #1e293b;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+  }
+  .page-header .logo {
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .page-header h1 { font-size: 1.15rem; font-weight: 700; }
+  .page-header p  { font-size: 0.78rem; opacity: 0.75; margin-top: 1px; }
+
+  /* ── Main Layout ── */
+  .kl-layout {
+    display: grid;
+    grid-template-columns: 55% 45%;
+    flex: 1;
+    min-height: 0;
+    gap: 0;
+  }
+
+  /* ── Chat Panel (links) ── */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e2e8f0;
+    background: #fff;
+    min-height: 0;
+  }
+
+  .chat-panel-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .status-dot {
+    width: 10px; height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+    50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  }
+  .chat-panel-header span { font-weight: 600; font-size: 0.92rem; flex: 1; }
+  .btn-clear {
+    background: none; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 4px 10px; font-size: 0.75rem; color: #64748b; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { background: #f1f5f9; border-color: #94a3b8; color: #334155; }
+
+  .chat-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+
+  /* Nachrichten-Blasen */
+  .msg { display: flex; align-items: flex-end; gap: 8px; max-width: 88%; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.ki   { align-self: flex-start; }
+
+  .msg-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .msg.user .msg-avatar { background: #1e40af; }
+  .msg.ki   .msg-avatar { background: #e0f2fe; }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    max-width: 100%;
+  }
+  .msg.user .msg-bubble {
+    background: #1e40af; color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.ki .msg-bubble {
+    background: #f8fafc; color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Typing Indicator */
+  .typing-indicator { display: flex; gap: 4px; padding: 6px 2px; }
+  .typing-indicator span {
+    width: 7px; height: 7px;
+    background: #94a3b8; border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30%           { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── Input Area ── */
+  .chat-input-area {
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .pill {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .pill:hover { background: #dbeafe; border-color: #93c5fd; }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  #klInput {
+    flex: 1;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 0.875rem;
+    resize: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    line-height: 1.4;
+  }
+  #klInput:focus { outline: none; border-color: #0ea5e9; }
+  .send-btn {
+    background: #0ea5e9;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    width: 40px; height: 40px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .send-btn:hover { background: #0284c7; }
+
+  /* ── Right Panel ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    overflow-y: auto;
+    background: #f0f4f8;
+  }
+
+  .panel-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border: 1px solid #e2e8f0;
+  }
+  .panel-card h3 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+
+  /* Profil-Tags */
+  .profil-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .profil-tag {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .profil-tag.gruen  { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+  .profil-tag.orange { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+  .profil-tag.grau   { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+
+  /* Empfehlung-Karte */
+  .empf-card { display: flex; flex-direction: column; gap: 8px; }
+  .empf-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .empf-name { font-size: 1rem; font-weight: 700; color: #1e293b; }
+  .empf-hersteller { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+  .score-badge {
+    background: #dcfce7;
+    color: #15803d;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .empf-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .empf-detail {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  .empf-detail .label { color: #64748b; font-size: 0.7rem; margin-bottom: 1px; }
+  .empf-detail .value { font-weight: 600; color: #1e293b; }
+  .score-bar-wrap { margin-top: 4px; }
+  .score-bar-label { font-size: 0.72rem; color: #64748b; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .score-bar-bg { background: #e2e8f0; border-radius: 4px; height: 6px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #0ea5e9, #22c55e); transition: width 0.6s ease; }
+
+  /* Alternativen-Grid */
+  .alt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .alt-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .alt-card .alt-icon { font-size: 20px; margin-bottom: 4px; }
+  .alt-card .alt-name { font-size: 0.73rem; font-weight: 600; color: #1e293b; line-height: 1.3; }
+  .alt-card .alt-typ  { font-size: 0.68rem; color: #64748b; margin-top: 2px; }
+  .alt-card .alt-score {
+    display: inline-block;
+    margin-top: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 10px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  /* Analyse */
+  .analyse-text {
+    font-size: 0.83rem;
+    line-height: 1.65;
+    color: #334155;
+  }
+  .analyse-text strong { color: #1e40af; }
+
+  /* Platzhalter */
+  .placeholder-hint {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    padding: 12px 0;
+  }
+  .placeholder-hint .icon { font-size: 28px; margin-bottom: 6px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+  /* ══════════════════════════════════════
+     MOBILE TAB BAR (nur auf kleinen Screens)
+     ══════════════════════════════════════ */
+  .mobile-tabs { display: none; }
+
+  @media (max-width: 768px) {
+    body { overflow: hidden; }
+
+    .page-header {
+      padding: 10px 16px;
+    }
+    .page-header h1 { font-size: 1rem; }
+    .page-header p  { font-size: 0.72rem; }
+    .page-header .logo { width: 32px; height: 32px; font-size: 17px; }
+
+    /* Layout: eine Spalte, Panels stapeln sich – nur das aktive sichtbar */
+    .kl-layout {
+      grid-template-columns: 1fr;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-panel,
+    .right-panel {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .chat-panel.tab-active  { display: flex; }
+    .right-panel.tab-active { display: flex; }
+
+    /* Input-Bereich: Pills horizontal scrollbar */
+    .quick-actions {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .quick-actions::-webkit-scrollbar { display: none; }
+
+    /* Nachrichten breiter */
+    .msg { max-width: 95%; }
+
+    /* Empfehlung-Details 2-spaltig bleibt, Karten kompakter */
+    .panel-card { border-radius: 10px; padding: 12px 14px; }
+
+    /* Alternatives-Grid: 3 Spalten bleiben, aber Schrift kleiner */
+    .alt-card { padding: 8px 6px; }
+    .alt-card .alt-name { font-size: 0.68rem; }
+
+    /* Tab-Leiste unten */
+    .mobile-tabs {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .mobile-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 10px 0 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+      border: none;
+      background: none;
+      transition: color 0.15s;
+      position: relative;
+    }
+    .mobile-tab .tab-icon { font-size: 20px; line-height: 1; }
+    .mobile-tab.active { color: #1e40af; }
+    .mobile-tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 3px;
+      background: #1e40af;
+      border-radius: 0 0 3px 3px;
+    }
+
+    /* Badge für neue Empfehlung */
+    .tab-badge {
+      position: absolute;
+      top: 6px; right: calc(50% - 18px);
+      background: #ef4444;
+      color: #fff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: none;
+    }
+    .tab-badge.show { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="logo">👁</div>
+  <div>
+    <h1>KI Kontaktlinsen-Assistent</h1>
+    <p>Optik Muster · Personalisierte Linsenempfehlung</p>
+  </div>
+</div>
+
+<!-- ── Haupt-Layout ── -->
+<div class="kl-layout">
+
+  <!-- ════ LINKE SPALTE: CHAT ════ -->
+  <div class="chat-panel">
+
+    <div class="chat-panel-header">
+      <div class="status-dot"></div>
+      <span>KI-Assistent · Kontaktlinsen</span>
+      <button class="btn-clear" onclick="clearChat()">🗑 Löschen</button>
+    </div>
+
+    <div class="chat-messages-area" id="klChatMessages">
+      <!-- Begrüßungsnachricht -->
+      <div class="msg ki">
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-bubble">
+          Guten Tag! Ich bin Ihr KI-Assistent für die Kontaktlinsen-Beratung. Beschreiben Sie mir bitte die Bedürfnisse Ihres Kunden – zum Beispiel Tragekomfort, Aktivitäten, Budget oder spezifische Augenbeschwerden. Ich empfehle dann die optimale Linse.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="quick-actions">
+        <button class="pill" onclick="quickSend('Kunde hat trockene Augen und verträgt Linsen schwer')">💧 Trockene Augen</button>
+        <button class="pill" onclick="quickSend('Kunde arbeitet täglich 8+ Stunden am Bildschirm')">💻 Bildschirmarbeit</button>
+        <button class="pill" onclick="quickSend('Kunde treibt viel Sport und braucht sichere Passform')">🏃 Sport & Aktiv</button>
+        <button class="pill" onclick="quickSend('Kunde möchte eine bequeme Tageslinse')">☀️ Tageslinse</button>
+        <button class="pill" onclick="quickSend('Kunde bevorzugt Monatslinsen mit Pflegemittel')">📅 Monatslinse</button>
+        <button class="pill" onclick="quickSend('Kunde sucht Premium-Linsen ohne Kompromisse')">⭐ Premium</button>
+        <button class="pill" onclick="quickSend('Kunde sucht gutes Preis-Leistungs-Verhältnis')">💰 Preis-Leistung</button>
+        <button class="pill" onclick="quickSend('Kunde hat Sehwerte: -3,25 / -0,75 Achse 90°')">📋 Sehwerte eingeben</button>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="klInput" rows="2" placeholder="Kundenbeschreibung eingeben, z. B. trockene Augen, Sport, Budget …"
+          onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendKLMessage();}"></textarea>
+        <button class="send-btn" onclick="sendKLMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ RECHTE SPALTE: LIVE-EMPFEHLUNG ════ -->
+  <div class="right-panel">
+
+    <div class="panel-card" id="profilCard">
+      <h3>👤 Kundenprofil erkannt</h3>
+      <div class="profil-tags" id="profilTags">
+        <div class="placeholder-hint">
+          <div class="icon">💬</div>
+          Starten Sie eine Beratung, um das Kundenprofil zu ermitteln.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-card" id="empfCard">
+      <h3>🏆 Empfohlene Kontaktlinse</h3>
+      <div id="empfInhalt">
+        <div class="placeholder-hint">Empfehlung erscheint nach der ersten Eingabe.</div>
+      </div>
+    </div>
+
+    <div class="panel-card" id="altCard">
+      <h3>🔄 Alternative Produkte</h3>
+      <div class="alt-grid" id="altInhalt">
+        <div class="placeholder-hint" style="grid-column:1/-1">Alternativen werden hier angezeigt.</div>
+      </div>
+    </div>
+
+    <div class="panel-card" id="analyseCard">
+      <h3>🧠 KI Analyse</h3>
+      <div id="analyseInhalt">
+        <div class="placeholder-hint">Detaillierte Analyse erscheint nach der Beratung.</div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /.kl-layout -->
+
+<!-- Mobile Tab-Leiste (nur auf kleinen Screens sichtbar) -->
+<div class="mobile-tabs">
+  <button class="mobile-tab active" id="tabChat" onclick="switchTab('chat')">
+    <span class="tab-icon">💬</span>
+    Chat
+  </button>
+  <button class="mobile-tab" id="tabEmpf" onclick="switchTab('empf')">
+    <span class="tab-icon">🏆</span>
+    Empfehlung
+    <span class="tab-badge" id="empfBadge">Neu</span>
+  </button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  PRODUKTDATENBANK
+// ═══════════════════════════════════════════════════════════
+const PRODUKTE = {
+  dailies_total1: {
+    name: 'Dailies Total1',
+    hersteller: 'Alcon',
+    typ: 'Tageslinse',
+    wassergehalt: '80 % (Oberfläche)',
+    tragzeit: 'Täglich wechselbar',
+    material: 'Delefilcon A',
+    sauerstoff: 'DK/t 156',
+    score: 97,
+    icon: '💧',
+    tags: ['Trockene Augen', 'Tageslinse', 'Premium', 'Höchster Komfort'],
+    analyse: 'Die <strong>Dailies Total1</strong> setzt mit ihrer Wassergradienten-Technologie Maßstäbe. Die Linsenoberfläche erreicht einen Wassergehalt von bis zu 80 %, was ein fast nicht wahrnehmbares Tragegefühl erzeugt. Ideal für Patienten mit empfindlichen oder trockenen Augen sowie für längeres Tragen.',
+  },
+  acuvue_oasys: {
+    name: 'Acuvue Oasys',
+    hersteller: 'Johnson & Johnson',
+    typ: '2-Wochen-Linse',
+    wassergehalt: '38 %',
+    tragzeit: 'Bis zu 2 Wochen',
+    material: 'Senofilcon A',
+    sauerstoff: 'DK/t 147',
+    score: 92,
+    icon: '💻',
+    tags: ['Bildschirmarbeit', 'Trockene Augen', 'Allrounder', 'HydraLuxe'],
+    analyse: 'Die <strong>Acuvue Oasys</strong> mit HydraLuxe™-Technologie ist für die Herausforderungen digitaler Bildschirmarbeit optimiert. Sie ahmt den natürlichen Tränenfilm nach und kompensiert das reduzierte Blinzeln vor Bildschirmen. Eine der meistverkauften Linsen weltweit.',
+  },
+  air_optix_aqua: {
+    name: 'Air Optix Aqua',
+    hersteller: 'Alcon',
+    typ: 'Monatslinse',
+    wassergehalt: '33 %',
+    tragzeit: 'Monatlich wechselbar',
+    material: 'Lotrafilcon B',
+    sauerstoff: 'DK/t 138',
+    score: 88,
+    icon: '🏃',
+    tags: ['Sport', 'Aktiver Lebensstil', 'Monatslinse', 'UV-Schutz'],
+    analyse: 'Die <strong>Air Optix Aqua</strong> überzeugt durch ihre Plasma-Oberflächenbehandlung, die Ablagerungen minimiert und eine stabile Passform garantiert – selbst bei intensiver körperlicher Aktivität. Die hohe Sauerstoffdurchlässigkeit sorgt für gesunde Augen auch bei langen Tragezeiten.',
+  },
+  acuvue_moist: {
+    name: '1-Day Acuvue Moist',
+    hersteller: 'Johnson & Johnson',
+    typ: 'Tageslinse',
+    wassergehalt: '58 %',
+    tragzeit: 'Täglich wechselbar',
+    material: 'Etafilcon A',
+    sauerstoff: 'DK/t 33',
+    score: 85,
+    icon: '☀️',
+    tags: ['Tageslinse', 'Komfort', 'Einfache Handhabung'],
+    analyse: 'Die <strong>1-Day Acuvue Moist</strong> bietet mit ihrer LACREON®-Technologie einen feuchtigkeitsspeichernden Wirkstoff, der dauerhaft im Linsenmaterial verankert ist. Als Tageslinse entfällt jede Pflege – ideal für Einsteiger und gelegentliche Träger.',
+  },
+  biofinity: {
+    name: 'Biofinity',
+    hersteller: 'CooperVision',
+    typ: 'Monatslinse',
+    wassergehalt: '48 %',
+    tragzeit: 'Monatlich / verlängert bis 7 Tage',
+    material: 'Comfilcon A',
+    sauerstoff: 'DK/t 160',
+    score: 90,
+    icon: '📅',
+    tags: ['Monatslinse', 'Aquaform Technologie', 'Verlängertes Tragen'],
+    analyse: 'Die <strong>Biofinity</strong> nutzt Aquaform®-Technologie, die Silikonhydrogel-Weichheit mit natürlicher Feuchtigkeitsbindung verbindet. Sie eignet sich auch für gelegentliches verlängertes Tragen (bis zu 7 Tage/Nächte, Arztempfehlung erforderlich). Exzellente Sauerstoffdurchlässigkeit für gesunde Hornhaut.',
+  },
+  miru_1day: {
+    name: 'Miru 1day UpSide',
+    hersteller: 'Menicon',
+    typ: 'Tageslinse',
+    wassergehalt: '40 %',
+    tragzeit: 'Täglich wechselbar',
+    material: 'Stenfilcon A',
+    sauerstoff: 'DK/t 100',
+    score: 80,
+    icon: '💰',
+    tags: ['Preis-Leistung', 'Tageslinse', 'Dünnste Tageslinse'],
+    analyse: 'Die <strong>Miru 1day UpSide</strong> ist mit 7,5 Mikrometern die dünnste Tageslinse der Welt. Das revolutionäre UpSide-Design verhindert das Umstülpen und erleichtert das Einsetzen erheblich. Hervorragendes Preis-Leistungs-Verhältnis für preisbewusste Patienten ohne Qualitätsverzicht.',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+//  KEYWORD-MATCHING → ANTWORT GENERIEREN
+// ═══════════════════════════════════════════════════════════
+function generateKLResponse(text) {
+  const t = text.toLowerCase();
+
+  // Sehwerte erkannt
+  if (t.match(/[-−]?\d[,\.]\d+/) || t.includes('sehwert') || t.includes('dioptrien') || t.includes('achse')) {
+    return {
+      produkt: PRODUKTE.acuvue_oasys,
+      alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.acuvue_moist],
+      extraTags: ['Sphärisch', 'Astigmatismus geprüft'],
+      antwortText: 'Die Sehwerte habe ich erfasst. Basierend auf diesen Werten empfehle ich die Acuvue Oasys – sie deckt ein breites Stärkenspektrum ab und bietet ausgezeichneten Tragekomfort. Bitte prüfen Sie ggf. einen torischen Typ bei Astigmatismus über 0,75 dpt.',
+    };
+  }
+
+  // Premium
+  if (t.includes('premium') || t.includes('beste') || t.includes('ohne kompromiss')) {
+    return {
+      produkt: PRODUKTE.dailies_total1,
+      alternativen: [PRODUKTE.acuvue_oasys, PRODUKTE.biofinity, PRODUKTE.air_optix_aqua],
+      extraTags: ['Premium-Kunde', 'Höchste Qualität'],
+      antwortText: 'Für Premium-Ansprüche ist die Dailies Total1 von Alcon die klare Empfehlung. Die Wassergradienten-Technologie bietet ein unvergleichliches Tragegefühl – viele Kunden berichten, die Linse kaum zu spüren.',
+    };
+  }
+
+  // Preis-Leistung
+  if (t.includes('preis') || t.includes('günstig') || t.includes('budget') || t.includes('kosten') || t.includes('erschwinglich')) {
+    return {
+      produkt: PRODUKTE.miru_1day,
+      alternativen: [PRODUKTE.acuvue_moist, PRODUKTE.air_optix_aqua, PRODUKTE.acuvue_oasys],
+      extraTags: ['Budgetbewusst', 'Tageslinse'],
+      antwortText: 'Für optimales Preis-Leistungs-Verhältnis empfehle ich die Miru 1day UpSide. Als dünnste Tageslinse der Welt verbindet sie innovative Technik mit einem günstigen Tagespreis. Kein Pflegemittel nötig.',
+    };
+  }
+
+  // Sport
+  if (t.includes('sport') || t.includes('aktiv') || t.includes('laufen') || t.includes('schwimmen') || t.includes('fußball') || t.includes('fitness')) {
+    return {
+      produkt: PRODUKTE.air_optix_aqua,
+      alternativen: [PRODUKTE.biofinity, PRODUKTE.acuvue_oasys, PRODUKTE.dailies_total1],
+      extraTags: ['Aktiver Lebensstil', 'Sport', 'UV-Schutz'],
+      antwortText: 'Für sportlich aktive Kunden ist die Air Optix Aqua ideal: Die Plasma-Beschichtung verhindert Ablagerungen durch Schweiß, und die sichere Passform hält auch bei intensiver Bewegung. UV-Schutz ist inklusive.',
+    };
+  }
+
+  // Monatslinse
+  if (t.includes('monatslinse') || t.includes('monatlich') || t.includes('pflegemittel') || t.includes('monats')) {
+    return {
+      produkt: PRODUKTE.biofinity,
+      alternativen: [PRODUKTE.air_optix_aqua, PRODUKTE.acuvue_oasys, PRODUKTE.dailies_total1],
+      extraTags: ['Monatslinse', 'Nachhaltig', 'Mit Pflegesystem'],
+      antwortText: 'Als Monatslinse empfehle ich die Biofinity von CooperVision. Exzellente Sauerstoffdurchlässigkeit, angenehm im Tragen, und bei Bedarf sogar für gelegentliches Übernachttragen geeignet. Günstiger im Jahresvergleich als Tageslinsen.',
+    };
+  }
+
+  // Tageslinse
+  if (t.includes('tageslinse') || t.includes('täglich') || t.includes('einweglins')) {
+    return {
+      produkt: PRODUKTE.acuvue_moist,
+      alternativen: [PRODUKTE.dailies_total1, PRODUKTE.miru_1day, PRODUKTE.acuvue_oasys],
+      extraTags: ['Tageslinse', 'Hygieneoptimiert', 'Kein Pflegeaufwand'],
+      antwortText: 'Für eine Tageslinse empfehle ich als Einstieg die 1-Day Acuvue Moist: sehr angenehm, kein Pflegemittel, und die LACREON®-Technologie hält die Linse den ganzen Tag frisch. Für höchste Ansprüche: Dailies Total1 als Upgrade.',
+    };
+  }
+
+  // Bildschirmarbeit
+  if (t.includes('bildschirm') || t.includes('computer') || t.includes('büro') || t.includes('home office') || t.includes('homeoffice') || t.includes('pc') || t.includes('laptop')) {
+    return {
+      produkt: PRODUKTE.acuvue_oasys,
+      alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.acuvue_moist],
+      extraTags: ['Bildschirmarbeit', 'Digitale Ermüdung', 'HydraLuxe'],
+      antwortText: 'Für intensive Bildschirmarbeit ist die Acuvue Oasys mit HydraLuxe™ die Empfehlung Nr. 1. Sie ahmt den natürlichen Tränenfilm nach und kompensiert das verminderte Blinzeln vor dem Bildschirm. Viele Büroangestellte berichten von deutlich weniger Augenbrennen.',
+    };
+  }
+
+  // Trockene Augen (Default wenn erwähnt)
+  if (t.includes('trocken') || t.includes('brennen') || t.includes('reizung') || t.includes('verträgt') || t.includes('empfindlich')) {
+    return {
+      produkt: PRODUKTE.dailies_total1,
+      alternativen: [PRODUKTE.acuvue_oasys, PRODUKTE.biofinity, PRODUKTE.acuvue_moist],
+      extraTags: ['Trockene Augen', 'Empfindliche Augen', 'Höchste Verträglichkeit'],
+      antwortText: 'Bei trockenen oder empfindlichen Augen ist die Dailies Total1 meine klare Empfehlung. Die einzigartige Wassergradienten-Technologie sorgt für eine weiche, feuchte Oberfläche, die das Auge kaum bemerkt. Viele Patienten, die andere Linsen nicht vertragen haben, kommen damit bestens zurecht.',
+    };
+  }
+
+  // Fallback / Allgemein
+  return {
+    produkt: PRODUKTE.acuvue_oasys,
+    alternativen: [PRODUKTE.dailies_total1, PRODUKTE.biofinity, PRODUKTE.miru_1day],
+    extraTags: ['Allrounder', 'Erstberatung'],
+    antwortText: 'Vielen Dank für die Beschreibung. Als bewährten Allrounder empfehle ich die Acuvue Oasys – sie vereint hohen Tragekomfort, ausgezeichnete Sauerstoffdurchlässigkeit und eine breite Verfügbarkeit. Für eine gezieltere Empfehlung geben Sie mir gerne mehr Details zu Tragegewohnheiten oder spezifischen Beschwerden.',
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RECHTES PANEL AKTUALISIEREN
+// ═══════════════════════════════════════════════════════════
+function updateRightPanel(data) {
+  const { produkt, alternativen, extraTags } = data;
+
+  // ── Profil-Tags ──
+  const allTags = [...new Set([...produkt.tags, ...extraTags])];
+  const tagColors = ['', 'gruen', 'orange', 'grau', '', 'gruen', 'orange'];
+  document.getElementById('profilTags').innerHTML = allTags
+    .map((tag, i) => `<span class="profil-tag ${tagColors[i % tagColors.length]}">${tag}</span>`)
+    .join('');
+
+  // ── Haupt-Empfehlung ──
+  document.getElementById('empfInhalt').innerHTML = `
+    <div class="empf-card">
+      <div class="empf-header">
+        <div>
+          <div class="empf-name">${produkt.icon} ${produkt.name}</div>
+          <div class="empf-hersteller">${produkt.hersteller} · ${produkt.typ}</div>
+        </div>
+        <div class="score-badge">${produkt.score} % Match</div>
+      </div>
+      <div class="empf-details">
+        <div class="empf-detail">
+          <div class="label">Wassergehalt</div>
+          <div class="value">${produkt.wassergehalt}</div>
+        </div>
+        <div class="empf-detail">
+          <div class="label">Tragzeit</div>
+          <div class="value">${produkt.tragzeit}</div>
+        </div>
+        <div class="empf-detail">
+          <div class="label">Material</div>
+          <div class="value">${produkt.material}</div>
+        </div>
+        <div class="empf-detail">
+          <div class="label">Sauerstoff</div>
+          <div class="value">${produkt.sauerstoff}</div>
+        </div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-label">
+          <span>Übereinstimmung mit Kundenprofil</span>
+          <span>${produkt.score} %</span>
+        </div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" style="width: ${produkt.score}%"></div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Alternativen ──
+  document.getElementById('altInhalt').innerHTML = alternativen.map(p => `
+    <div class="alt-card">
+      <div class="alt-icon">${p.icon}</div>
+      <div class="alt-name">${p.name}</div>
+      <div class="alt-typ">${p.typ}</div>
+      <div class="alt-score">${p.score} %</div>
+    </div>`).join('');
+
+  // ── KI Analyse ──
+  document.getElementById('analyseInhalt').innerHTML =
+    `<div class="analyse-text">${produkt.analyse}</div>`;
+
+  // Auf Mobile: Badge zeigen und nach kurzer Verzögerung zum Empfehlung-Tab wechseln
+  if (window.innerWidth <= 768) {
+    const badge = document.getElementById('empfBadge');
+    badge.classList.add('show');
+    setTimeout(() => switchTab('empf'), 600);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHAT-FUNKTIONEN
+// ═══════════════════════════════════════════════════════════
+function addMessage(text, role) {
+  const container = document.getElementById('klChatMessages');
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-avatar">${isUser ? '👤' : '🤖'}</div>
+    <div class="msg-bubble">${text}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('klChatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg ki';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="msg-bubble">
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
+      </div>
+    </div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function sendKLMessage() {
+  const input = document.getElementById('klInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage(text, 'user');
+  input.value = '';
+
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+    const response = generateKLResponse(text);
+    addMessage(response.antwortText, 'ki');
+    updateRightPanel(response);
+  }, 1200 + Math.random() * 600);
+}
+
+function quickSend(text) {
+  document.getElementById('klInput').value = text;
+  sendKLMessage();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MOBILE TAB-NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function switchTab(tab) {
+  const chatPanel  = document.querySelector('.chat-panel');
+  const rightPanel = document.querySelector('.right-panel');
+  const tabChat    = document.getElementById('tabChat');
+  const tabEmpf    = document.getElementById('tabEmpf');
+  const badge      = document.getElementById('empfBadge');
+
+  if (tab === 'chat') {
+    chatPanel.classList.add('tab-active');
+    rightPanel.classList.remove('tab-active');
+    tabChat.classList.add('active');
+    tabEmpf.classList.remove('active');
+  } else {
+    rightPanel.classList.add('tab-active');
+    chatPanel.classList.remove('tab-active');
+    tabEmpf.classList.add('active');
+    tabChat.classList.remove('active');
+    badge.classList.remove('show');
+  }
+}
+
+// Initialer Zustand: Chat-Tab aktiv auf Mobile
+(function initTabs() {
+  const chatPanel  = document.querySelector('.chat-panel');
+  const rightPanel = document.querySelector('.right-panel');
+  if (window.innerWidth <= 768) {
+    chatPanel.classList.add('tab-active');
+  }
+})();
+
+function clearChat() {
+  const container = document.getElementById('klChatMessages');
+  container.innerHTML = `
+    <div class="msg ki">
+      <div class="msg-avatar">🤖</div>
+      <div class="msg-bubble">
+        Guten Tag! Ich bin Ihr KI-Assistent für die Kontaktlinsen-Beratung. Beschreiben Sie mir bitte die Bedürfnisse Ihres Kunden – zum Beispiel Tragekomfort, Aktivitäten, Budget oder spezifische Augenbeschwerden. Ich empfehle dann die optimale Linse.
+      </div>
+    </div>`;
+
+  document.getElementById('profilTags').innerHTML =
+    '<div class="placeholder-hint"><div class="icon">💬</div>Starten Sie eine Beratung, um das Kundenprofil zu ermitteln.</div>';
+  document.getElementById('empfInhalt').innerHTML =
+    '<div class="placeholder-hint">Empfehlung erscheint nach der ersten Eingabe.</div>';
+  document.getElementById('altInhalt').innerHTML =
+    '<div class="placeholder-hint" style="grid-column:1/-1">Alternativen werden hier angezeigt.</div>';
+  document.getElementById('analyseInhalt').innerHTML =
+    '<div class="placeholder-hint">Detaillierte Analyse erscheint nach der Beratung.</div>';
+}
+</script>
+</body>
+</html>
