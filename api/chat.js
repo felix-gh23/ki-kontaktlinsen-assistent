@@ -29,7 +29,7 @@ Nenne wenn möglich einen konkreten Produktnamen und begründe kurz die Empfehlu
         'X-Title': 'KI Kontaktlinsen-Assistent',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-v3-2',
+        model: 'deepseek/deepseek-v3.2',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
